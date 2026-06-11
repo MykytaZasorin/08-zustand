@@ -57,3 +57,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.backButton {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-decoration: underline;
+  cursor: pointer;
+  display: block;
+}

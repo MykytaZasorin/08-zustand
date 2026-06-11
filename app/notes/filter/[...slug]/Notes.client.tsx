@@ -2,13 +2,12 @@
 
 import css from "./Notes.client.module.css";
 import { useState } from "react";
+import Link from "next/link"; // Імпортуємо Link для навігації
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebouncedCallback } from "use-debounce";
 import NoteList from "@/components/NoteList/NoteList";
 import Pagination from "@/components/Pagination/Pagination";
 import SearchBox from "@/components/SearchBox/SearchBox";
-import Modal from "@/components/Modal/Modal";
-import NoteForm from "@/components/NoteForm/NoteForm";
 import { fetchNotes, FetchNotesResponse } from "@/lib/api";
 
 const PER_PAGE = 12;
@@ -20,7 +19,6 @@ interface NotesClientProps {
 export default function NotesClient({ tag }: NotesClientProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const currentTagString = Array.isArray(tag) ? tag[0] : tag || "all";
@@ -62,7 +60,10 @@ export default function NotesClient({ tag }: NotesClientProps) {
               onPageChange={setPage}
             />
           )}
-          <button onClick={() => setIsModalOpen(true)}>Create note +</button>
+
+          <Link href="/notes/action/create" className={css.createBtn}>
+            Create note +
+          </Link>
         </div>
       </header>
 
@@ -76,12 +77,6 @@ export default function NotesClient({ tag }: NotesClientProps) {
         <NoteList notes={data.notes} />
       ) : (
         !isLoading && <div className={css.centeredLoading}>No notes found</div>
-      )}
-
-      {isModalOpen && (
-        <Modal onClose={() => setIsModalOpen(false)}>
-          <NoteForm onCancel={() => setIsModalOpen(false)} />
-        </Modal>
       )}
     </div>
   );

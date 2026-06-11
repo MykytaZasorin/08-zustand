@@ -1,14 +1,17 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { fetchNoteById } from "@/lib/api";
-import css from "../../@modal/(.)notes/[id]/NoteDetails.module.css"; // Перевикористовуємо твої стилі
+import css from "../../@modal/(.)notes/[id]/NoteDetails.module.css";
 
 interface NoteDetailsProps {
   noteId: string;
 }
 
 export default function NoteDetailsClient({ noteId }: NoteDetailsProps) {
+  const router = useRouter();
+
   const {
     data: note,
     isLoading,
@@ -32,8 +35,16 @@ export default function NoteDetailsClient({ noteId }: NoteDetailsProps) {
       </p>
     );
 
+  const handleBack = () => {
+    router.push("/notes/filter/all");
+  };
+
   return (
     <div className={css.container}>
+      <button type="button" onClick={handleBack} className={css.backButton}>
+        Back
+      </button>
+
       <div className={css.item}>
         <div className={css.header}>
           <h2>{note.title}</h2>

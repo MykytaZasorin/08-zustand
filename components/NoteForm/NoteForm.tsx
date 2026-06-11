@@ -1,103 +1,117 @@
 "use client";
 
 import { FC } from "react";
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
+import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import css from "./NoteForm.module.css";
 import { createNote, CreateNoteParams } from "@/lib/api";
+import { useNoteStore } from "@/lib/store/noteStore";
 
 interface NoteFormProps {
-  onCancel: () => void;
+  onCancel?: () => void;
 }
 
-const validationSchema = Yup.object({
-  title: Yup.string()
-    .min(3, "Title must be at least 3 characters")
-    .max(50, "Title must be at most 50 characters")
-    .required("Title is required"),
-  content: Yup.string().max(500, "Content must be at most 500 characters"),
-  tag: Yup.string()
-    .oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"])
-    .required("Tag is required"),
-});
-
 const NoteForm: FC<NoteFormProps> = ({ onCancel }) => {
+  const router = useRouter();
   const queryClient = useQueryClient();
+
+  const { draft, setDraft, clearDraft } = useNoteStore();
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    const { name, value } = e.target;
+    setDraft({ [name]: value });
+  };
 
   const mutation = useMutation({
     mutationFn: (values: CreateNoteParams) => createNote(values),
     onSuccess: () => {
+      clearDraft();
       queryClient.invalidateQueries({ queryKey: ["notes"] });
-      onCancel();
+
+      router.push("/notes/filter/all");
     },
   });
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    mutation.mutate(draft);
+  };
+
+  const handleCancelClick = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      router.back();
+    }
+  };
+
   return (
-    <Formik
-      initialValues={{ title: "", content: "", tag: "Todo" }}
-      validationSchema={validationSchema}
-      onSubmit={(values, { resetForm }) => {
-        mutation.mutate(values);
-        resetForm();
-      }}
-    >
-      {({ isSubmitting }) => (
-        <Form className={css.form}>
-          <div className={css.formGroup}>
-            <label htmlFor="title">Title</label>
-            <Field id="title" name="title" className={css.input} />
-            <ErrorMessage name="title" component="span" className={css.error} />
-          </div>
+    <form onSubmit={handleSubmit} className={css.form}>
+      <div className={css.formGroup}>
+        <label htmlFor="title">Title</label>
+        <input
+          id="title"
+          name="title"
+          type="text"
+          className={css.input}
+          value={draft.title}
+          onChange={handleChange}
+          required
+        />
+      </div>
 
-          <div className={css.formGroup}>
-            <label htmlFor="content">Content</label>
-            <Field
-              id="content"
-              name="content"
-              as="textarea"
-              rows={8}
-              className={css.textarea}
-            />
-            <ErrorMessage
-              name="content"
-              component="span"
-              className={css.error}
-            />
-          </div>
+      <div className={css.formGroup}>
+        <label htmlFor="content">Content</label>
+        <textarea
+          id="content"
+          name="content"
+          rows={8}
+          className={css.textarea}
+          value={draft.content}
+          onChange={handleChange}
+        />
+      </div>
 
-          <div className={css.formGroup}>
-            <label htmlFor="tag">Tag</label>
-            <Field id="tag" name="tag" as="select" className={css.select}>
-              <option value="Todo">Todo</option>
-              <option value="Work">Work</option>
-              <option value="Personal">Personal</option>
-              <option value="Meeting">Meeting</option>
-              <option value="Shopping">Shopping</option>
-            </Field>
-            <ErrorMessage name="tag" component="span" className={css.error} />
-          </div>
+      <div className={css.formGroup}>
+        <label htmlFor="tag">Tag</label>
+        <select
+          id="tag"
+          name="tag"
+          className={css.select}
+          value={draft.tag}
+          onChange={handleChange}
+          required
+        >
+          <option value="Todo">Todo</option>
+          <option value="Work">Work</option>
+          <option value="Personal">Personal</option>
+          <option value="Meeting">Meeting</option>
+          <option value="Shopping">Shopping</option>
+        </select>
+      </div>
 
-          <div className={css.actions}>
-            <button
-              type="button"
-              className={css.cancelButton}
-              onClick={onCancel}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className={css.submitButton}
-              disabled={isSubmitting || mutation.isPending}
-            >
-              {mutation.isPending ? "Creating..." : "Create note"}
-            </button>
-          </div>
-        </Form>
-      )}
-    </Formik>
+      <div className={css.actions}>
+        <button
+          type="button"
+          className={css.cancelButton}
+          onClick={handleCancelClick}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className={css.submitButton}
+          disabled={mutation.isPending}
+        >
+          {mutation.isPending ? "Creating..." : "Create note"}
+        </button>
+      </div>
+    </form>
   );
 };
 
